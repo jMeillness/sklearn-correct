@@ -1,0 +1,7 @@
+.coverage
+.eggs/
+build/
+sklc.egg-info/
+
+*.pyc
+*~

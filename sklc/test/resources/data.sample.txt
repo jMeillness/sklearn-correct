@@ -1,0 +1,12 @@
+Feature1
+Feature2
+Feature3
+
+Error1
+Candidate1	0.1	0.2	0.3	1
+Candidate2	0.2	0.0	0.8	0
+Candidate3	0.3	0.4	0.1	1
+
+Error2
+Candidate4	0.1	0.2	0.3	0
+Candidate5	0.5	0.4	0.1	1

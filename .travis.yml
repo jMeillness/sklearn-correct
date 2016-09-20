@@ -1,0 +1,25 @@
+language: python
+
+sudo: false
+
+python:
+  - 2.7
+  
+matrix:
+  - python: 2.7
+
+before_install:
+  - pip install -U 'virtualenv==14.0.6'
+  - virtualenv --python=python .venv
+  - source .venv/bin/activate
+  - python -V
+  - pip install --upgrade pip setuptools
+
+install:
+  - python setup.py test
+
+script:
+  - make test
+
+after_success:
+  coveralls
