@@ -12,8 +12,10 @@ class SKLModelTest(unittest.TestCase):
     def setUp(self):
         self.data_path = testutils.get_resource_file('data.sample.txt')
         self.dataset = data.Dataset.read(self.data_path)
-        self.train_dataset = self.dataset.subset(lambda x: x.name == 'Error1')
-        self.test_dataset = self.dataset.subset(lambda x: x.name != 'Error1')
+        self.train_dataset = self.dataset.subset(
+                filt=lambda x: x.name == 'Error1')
+        self.test_dataset = self.dataset.subset(
+                filt=lambda x: x.name != 'Error1')
         self.write_path = 'tmp/model/test.model'
         self.model_kwargs = dict(pkl_path=self.write_path, cv=3)
         self.model_weighted_kwargs = dict(weighted=True, cv=3)

@@ -166,13 +166,113 @@ class DatasetTest(unittest.TestCase):
     def test_labels(self):
         self.assertEqual([1, 0, 1, 0, 1], self.dataset.labels)
 
-    def test_subset(self):
-        self.assertEqual([],
-            self.dataset.subset(lambda x: False).errors)
-        self.assertEqual([self.dataset.errors[0]],
-            self.dataset.subset(lambda x: x.name == 'Error1').errors)
-        self.assertEqual(self.dataset.errors,
-            self.dataset.subset(lambda x: True).errors)
+    def test_subset_with_filter(self):
+        sub = self.dataset.subset(filt=lambda x: True)
+        self.assertEqual(self.dataset.errors, sub.errors)
+
+        sub, complement = self.dataset.subset(
+                    filt=lambda x: False,
+                    return_complement=True
+                    )
+        self.assertEqual([], sub.errors)
+        self.assertEqual(self.dataset.errors, complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    filt=lambda x: x.name == 'Error1',
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[0]], sub.errors)
+        self.assertEqual([self.dataset.errors[1]], complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    filt=lambda x: x.name == 'Error2',
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[1]], sub.errors)
+        self.assertEqual([self.dataset.errors[0]], complement.errors)
+
+    def test_subset_with_first(self):
+        sub = self.dataset.subset(first=2)
+        self.assertEqual(self.dataset.errors, sub.errors)
+
+        sub, complement = self.dataset.subset(
+                    first=1,
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[0]], sub.errors)
+        self.assertEqual([self.dataset.errors[1]], complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    first=0,
+                    return_complement=True
+                    )
+        self.assertEqual([], sub.errors)
+        self.assertEqual(self.dataset.errors, complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    first=0.3,
+                    return_complement=True
+                    )
+        self.assertEqual([], sub.errors)
+        self.assertEqual(self.dataset.errors, complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    first=0.5,
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[0]], sub.errors)
+        self.assertEqual([self.dataset.errors[1]], complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    first=0.7,
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[0]], sub.errors)
+        self.assertEqual([self.dataset.errors[1]], complement.errors)
+
+    def test_subset_with_last(self):
+        sub = self.dataset.subset(last=2)
+        self.assertEqual(self.dataset.errors, sub.errors)
+
+        sub, complement = self.dataset.subset(
+                    last=1,
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[1]], sub.errors)
+        self.assertEqual([self.dataset.errors[0]], complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    last=0,
+                    return_complement=True
+                    )
+        self.assertEqual([], sub.errors)
+        self.assertEqual(self.dataset.errors, complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    last=0.3,
+                    return_complement=True
+                    )
+        self.assertEqual([], sub.errors)
+        self.assertEqual(self.dataset.errors, complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    last=0.5,
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[1]], sub.errors)
+        self.assertEqual([self.dataset.errors[0]], complement.errors)
+
+        sub, complement = self.dataset.subset(
+                    last=0.7,
+                    return_complement=True
+                    )
+        self.assertEqual([self.dataset.errors[1]], sub.errors)
+        self.assertEqual([self.dataset.errors[0]], complement.errors)
+
+    def test_subset_value_error(self):
+        self.assertRaises(ValueError, self.dataset.subset, **dict())
+        self.assertRaises(ValueError, self.dataset.subset,
+                **dict(first=1, last=0.3))
 
     def test_confidences(self):
         error1 = self.dataset

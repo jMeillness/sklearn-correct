@@ -259,18 +259,53 @@ class Dataset(WeightingMixin, object):
             e.confidences = values[used: used + num_candidates]
             used += num_candidates
 
-    def subset(self, filter_func):
+    def subset(self, **kwargs):
         """ Generate a data subset.
         
         A data subset has the same feature set and a subset of errors.
         
-        Args:
-            filter_func: a filter function.
+        kwargs:
+            filt: a filter function.
+            first: a integer or float value indicates the number or the
+                percentage of errors from the head of the error list is used to
+                construct subset.
+            last: same as first, but pick errors from the tail of the error
+                list.
+            return_complement: a boolean indicates whether the complement subset
+                should also return.
         
         Returns:
             A dataset contains the same feature set and a subset of errors.
         """
-        return Dataset(filter(filter_func, self.errors), self.feature_registry)
+        filt = kwargs.get('filt', None)
+        first = kwargs.get('first', None)
+        last = kwargs.get('last', None)
+        return_complement = kwargs.get('return_complement', False)
+
+        if sum([0 if arg is None else 1 for arg in [filt, first, last]]) != 1:
+            raise ValueError
+
+        if filt is not None:
+            sub = Dataset(filter(filt, self.errors), self.feature_registry)
+        elif first is not None:
+            size = int(first * len(self.errors)) if first < 1 else first
+            sub = Dataset(self.errors[: size], self.feature_registry)
+        elif last is not None:
+            size = int(last * len(self.errors)) if last < 1 else last
+            sub = Dataset(
+                    self.errors[len(self.errors) - size: ],
+                    self.feature_registry)
+
+        if return_complement:
+            complement = Dataset(
+                    filter(lambda err: err not in sub.errors, self.errors),
+                    self.feature_registry)
+            return sub, complement
+        else:
+            return sub
+
+    def first(error_percentage):
+        """ Generate a data subset. """
 
     @staticmethod
     def read(pathname):
