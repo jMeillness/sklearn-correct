@@ -1,3 +1,15 @@
+class ConfidenceRankError(Exception):
+    """ Raise if errors occurs in confidence ranking.
+    """
+    pass
+
+
+class ConfidenceUnsetError(Exception):
+    """ Raise when an unset confidence value is used.
+    """
+    pass
+
+
 class Feature(object):
     """ A candidate suggestion feature that scores correction candidate.
         
@@ -101,12 +113,6 @@ class Candidate(object):
         self.confidence = -1
 
 
-class ConfidenceUnsetError(Exception):
-    """ Raise when an unset confidence value is used.
-    """
-    pass
-
-
 class WeightingMixin:
 
     @property
@@ -185,9 +191,12 @@ class Error(WeightingMixin, object):
             A integer indicates the rank of the top ranked correction.
 
         Raises:
+            ConfidenceRankError: if there is no candidate exists in this error.
             ConfidenceUnsetError: if an unset confidence value exists in any of
                 the candidates.
         """
+        if len(self.confidences) == 0:
+            raise ConfidenceRankError
         if min(self.confidences) == -1:
             raise ConfidenceUnsetError
         conf = max([c.confidence if c.label else 0 for c in self.candidates])
@@ -365,16 +374,44 @@ class Dataset(WeightingMixin, object):
         
         return Dataset(errors, feature_registry)
 
-    def precision_at(self, n):
+    def precision_at(self, n=float('inf')):
         """ The percentage of correction ranked in top 'n' among all errors in
         this dataset.
+        
+        If there exists error object with no candidate in this dataset, this
+        function counts such object as an 'out of top' instance.
+        
+        Args:
+            n: a integer indicates the number of top candidates are used to
+                search a correction. (default: infinity)
 
+        Returns:
+            The precision of the correction in top 'n' candidates. If the value
+            of 'n' is infinity, returns the percentage of correction ever exists
+            as candidates.
+        
         Raises:
             ValueError: If 'n' is not positive.
             ConfidenceUnsetError: If any error confidence is unset.
+            ConfidenceRankError: If there is not error objects in this dataset.
         """
+        if len(self.errors) == 0:
+            raise ConfidenceRankError
         if n <= 0:
             raise ValueError
-        return sum([1 if e.rank <= n else 0 for e in self.errors]) / \
-            float(len(self.errors))
+        elif n == float('inf'):
+            def exists_true_label(error):
+                for c in error.candidates:
+                    if c.label == True:
+                        return True
+                return False
+            count = sum([1 if exists_true_label(e) else 0 for e in self.errors])
+        else:
+            def get_rank_savely(err):
+                try:
+                    return err.rank
+                except ConfidenceRankError:
+                    return float('inf')
+            count = sum([1 if get_rank_savely(e) <= n else 0 for e in self.errors])
+        return count / float(len(self.errors))
         

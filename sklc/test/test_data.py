@@ -1,4 +1,5 @@
 from .. import data
+import math
 import testutils
 import unittest
 
@@ -102,11 +103,16 @@ class ErrorTest(unittest.TestCase):
         error.confidences = [0.1, 0.1, 0.1]
         self.assertEqual(1, error.rank)
 
-    def test_rank_error(self):
+    def test_rank_confidence_unset_error(self):
         def call_rank():
             self.dataset.errors[0].rank
-
         self.assertRaises(data.ConfidenceUnsetError, call_rank)
+
+    def test_rank_confidence_rank_error(self):
+        def call_rank():
+            self.dataset.errors[0].candidates = []
+            self.dataset.errors[0].rank
+        self.assertRaises(data.ConfidenceRankError, call_rank)
 
 
 class DatasetTest(unittest.TestCase):
@@ -295,14 +301,25 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(1, self.dataset.precision_at(1))
         self.assertEqual(1, self.dataset.precision_at(2))
         self.assertEqual(1, self.dataset.precision_at(10))
+        self.assertEqual(1, self.dataset.precision_at())
         self.dataset.errors[1].confidences = [0.2, 0.1]
         self.assertEqual(0.5, self.dataset.precision_at(1))
         self.assertEqual(1, self.dataset.precision_at(2))
         self.assertEqual(1, self.dataset.precision_at(10))
+        self.assertEqual(1, self.dataset.precision_at())
+        self.dataset.errors[1].candidates = []
+        self.assertEqual(0.5, self.dataset.precision_at(1))
+        self.assertEqual(0.5, self.dataset.precision_at(10))
+        self.assertEqual(0.5, self.dataset.precision_at())
 
     def test_precision_value_error(self):
         self.assertRaises(ValueError, self.dataset.precision_at, 0)
 
     def test_precision_confidence_unset_error(self):
         self.assertRaises(data.ConfidenceUnsetError,
+                self.dataset.precision_at, 1)
+
+    def test_precision_confidence_rank_error(self):
+        self.dataset.errors = []
+        self.assertRaises(data.ConfidenceRankError,
                 self.dataset.precision_at, 1)

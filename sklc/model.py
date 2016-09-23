@@ -98,7 +98,7 @@ class SKLModel(object):
         confidences = self._gs.best_estimator_ \
                 .predict(np.array(test_data.feature_values)) \
                 .reshape(-1,).tolist()
-        test_data.confidence = confidences
+        test_data.confidences = confidences
         return confidences
 
     @staticmethod
