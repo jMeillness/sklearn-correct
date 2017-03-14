@@ -1,8 +1,13 @@
 .coverage
 .eggs/
 build/
+dist/
+*.back/
 sklc.egg-info/
 
 .DS_Store
+
+**/.DS_Store
+
 *.pyc
 *~

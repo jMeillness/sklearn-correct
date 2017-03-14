@@ -57,6 +57,8 @@ class SKLModel(object):
         cv = kwargs.get('cv', 10)
         pkl_path = kwargs.get('pkl_path', None)
         load = kwargs.get('load', False)
+
+        print(estimator.get_params().keys())
         
         if load:
             return
@@ -138,8 +140,9 @@ class RandomForestModel(SKLModel):
 
     DEFAULT_PARAM_GRID = dict(
             n_estimators = np.arange(50, 500, 50),
-            min_samples_split = np.arange(1, 3, 1),
+            min_samples_split = np.arange(2, 10, 2),
             )
+    ESTIMATOR = ensemble.RandomForestRegressor()
 
     def __init__(self, train_data, **kwargs):
         """
@@ -149,7 +152,7 @@ class RandomForestModel(SKLModel):
         param_grid = kwargs.pop('param_grid',
                 RandomForestModel.DEFAULT_PARAM_GRID)
         super(RandomForestModel, self).__init__( \
-                ensemble.RandomForestRegressor(),
+                RandomForestModel.ESTIMATOR,
                 param_grid,
                 train_data,
                 **kwargs
@@ -162,6 +165,7 @@ class KernelRidgeModel(SKLModel):
             alpha = [1e0],
             gamma = [1e0],
             )
+    ESTIMATOR = kernel_ridge.KernelRidge(kernel='rbf', gamma=0.1)
 
     def __init__(self, train_data, **kwargs):
         """
@@ -171,7 +175,7 @@ class KernelRidgeModel(SKLModel):
         param_grid = kwargs.pop('param_grid',
                 KernelRidgeModel.DEFAULT_PARAM_GRID)
         super(KernelRidgeModel, self).__init__( \
-                kernel_ridge.KernelRidge(kernel='rbf', gamma=0.1),
+                KernelRidgeModel.ESTIMATOR,
                 param_grid,
                 train_data,
                 **kwargs
@@ -182,9 +186,10 @@ class ExtraTreesModel(SKLModel):
 
     DEFAULT_PARAM_GRID = dict(
             n_estimators = np.arange(10, 200, 10),
-            min_samples_split = np.arange(1, 10, 1),
+            min_samples_split = np.arange(2, 10, 1),
             bootstrap=[True],
             )
+    ESTIMATOR = ensemble.ExtraTreesRegressor()
 
     def __init__(self, train_data, **kwargs):
         """
@@ -194,7 +199,7 @@ class ExtraTreesModel(SKLModel):
         param_grid = kwargs.pop('param_grid',
                 ExtraTreesModel.DEFAULT_PARAM_GRID)
         super(ExtraTreesModel, self).__init__( \
-                ensemble.ExtraTreesRegressor(),
+                ExtraTreesModel.ESTIMATOR,
                 param_grid,
                 train_data,
                 **kwargs
@@ -207,6 +212,7 @@ class AdaBoostModel(SKLModel):
             n_estimators = np.arange(50, 500, 50),
             loss=['linear', 'square', 'exponential']
             )
+    ESTIMATOR = ensemble.AdaBoostRegressor()
 
     def __init__(self, train_data, **kwargs):
         """
@@ -216,7 +222,7 @@ class AdaBoostModel(SKLModel):
         param_grid = kwargs.pop('param_grid',
                 AdaBoostModel.DEFAULT_PARAM_GRID)
         super(AdaBoostModel, self).__init__( \
-                ensemble.AdaBoostRegressor(),
+                AdaBoostModel.ESTIMATOR,
                 param_grid,
                 train_data,
                 **kwargs
@@ -228,9 +234,10 @@ class GradientBoostingModel(SKLModel):
     DEFAULT_PARAM_GRID = dict(
             loss = ['ls', 'lad', 'huber', 'quantile'],
             n_estimators = np.arange(100, 500, 100),
-            min_samples_split = np.arange(1, 3, 1),
+            min_samples_split = np.arange(2, 5, 1),
             max_depth = np.arange(1, 5, 1),
             )
+    ESTIMATOR = ensemble.GradientBoostingRegressor()
 
     def __init__(self, train_data, **kwargs):
         """
@@ -240,7 +247,7 @@ class GradientBoostingModel(SKLModel):
         param_grid = kwargs.pop('param_grid',
                 GradientBoostingModel.DEFAULT_PARAM_GRID)
         super(GradientBoostingModel, self).__init__( \
-                ensemble.GradientBoostingRegressor(),
+                GradientBoostingModel.ESTIMATOR,
                 param_grid,
                 train_data,
                 **kwargs
@@ -254,6 +261,7 @@ class SupportVectorModel(SKLModel):
             C = [1e0],
             gamma = np.logspace(-2, 2, 5),
             )
+    ESTIMATOR = svm.SVR()
 
     def __init__(self, train_data, **kwargs):
         """
@@ -263,31 +271,31 @@ class SupportVectorModel(SKLModel):
         param_grid = kwargs.pop('param_grid',
                 SupportVectorModel.DEFAULT_PARAM_GRID)
         super(SupportVectorModel, self).__init__( \
-                svm.SVR(),
+                SupportVectorModel.ESTIMATOR,
                 param_grid,
                 train_data,
                 **kwargs
                 )
 
 
-# NOTE: Available only with scikit-learn 1.8 or higher.
-#class MLPModel(SKLModel):
-#
-#    DEFAULT_PARAM_GRID = dict(
-#            activation = ['logistic', 'tanh', 'relu'],
-#            algorithm = ['l-bfgs', 'sgd', 'adam'],
-#            )
-#
-#    def __init__(self, train_data, **kwargs):
-#        """
-#        Kwargs:
-#            param_grid: a parameter grid used for training.
-#        """
-#        param_grid = kwargs.pop('param_grid',
-#                MLPModel.DEFAULT_PARAM_GRID)
-#        super(MLPModel, self).__init__( \
-#                neural_network.MLPRegressor(),
-#                param_grid,
-#                train_data,
-#                **kwargs
-#                )
+class MLPModel(SKLModel):
+
+    DEFAULT_PARAM_GRID = dict(
+            activation = ['logistic', 'tanh', 'relu'],
+            algorithm = ['sgd'],
+            )
+    ESTIMATOR = neural_network.MLPRegressor()
+
+    def __init__(self, train_data, **kwargs):
+        """
+        Kwargs:
+            param_grid: a parameter grid used for training.
+        """
+        param_grid = kwargs.pop('param_grid',
+                MLPModel.DEFAULT_PARAM_GRID)
+        super(MLPModel, self).__init__( \
+                MLPModel.ESTIMATOR,
+                param_grid,
+                train_data,
+                **kwargs
+                )

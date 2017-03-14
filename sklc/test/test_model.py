@@ -1,10 +1,11 @@
-from .. import data
-from .. import model
 import numpy as np
 from os import path
 import shutil
-import testutils
 import unittest
+
+from . import testutils
+from .. import data
+from .. import model
 
 
 class SKLModelTest(unittest.TestCase):

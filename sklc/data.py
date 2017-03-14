@@ -1,3 +1,7 @@
+import codecs
+import functools
+
+
 class ConfidenceRankError(Exception):
     """ Raise if errors occurs in confidence ranking.
     """
@@ -105,7 +109,6 @@ class Candidate(object):
             this candidate to be a correction. If the confidence is unset, it
             has the default value -1.
     """
-
     def __init__(self, name, feature_values, label):
         self.name = name
         self.feature_values = feature_values
@@ -118,6 +121,8 @@ class WeightingMixin:
     @property
     def feature_weights(self):
         num_true = sum([1 if l else 0 for l in self.labels])
+        if num_true == 0:
+            raise ValueError('No record labeled 1.')
         true_weight = float(len(self.labels) - num_true) / num_true
         return [true_weight if l else 1 for l in self.labels]
 
@@ -129,6 +134,7 @@ class Error(WeightingMixin, object):
 
     Attributes:
         name: a string indicates the error text.
+        position: a integer indicates the position in the original text.
         candidates: a list of candidates objects suggested for correcting this
             error.
         feature_value: a two-dimensional list of float, which indicates the
@@ -136,10 +142,11 @@ class Error(WeightingMixin, object):
         labels: a list of integers, which indicates the labels of each
             error candidate.
     """
-
-    def __init__(self, name, candidates=None):
+    def __init__(self, name, position=None, candidates=None):
         self.name = name
+        self.position = position
         self.candidates = [] if candidates == None else candidates
+
 
     @property
     def feature_values(self):
@@ -151,6 +158,7 @@ class Error(WeightingMixin, object):
         """
         return [c.feature_values for c in self.candidates]
 
+
     @property
     def labels(self):
         """ Get the labels of all candidates.
@@ -160,6 +168,7 @@ class Error(WeightingMixin, object):
         """
         return [c.label for c in self.candidates]
 
+
     @property
     def confidences(self):
         """ Get the confidences of all candidates.
@@ -168,6 +177,7 @@ class Error(WeightingMixin, object):
             A list of floats, which element is the confidence of a candidate.
         """
         return [c.confidence for c in self.candidates]
+
 
     @confidences.setter
     def confidences(self, values):
@@ -181,6 +191,10 @@ class Error(WeightingMixin, object):
                     (len(values), len(self.candidates)))
         for i, c in enumerate(self.candidates):
             c.confidence = values[i]
+
+
+    CORRECTION_NONEXIST = float('inf')
+
 
     @property
     def rank(self):
@@ -199,8 +213,32 @@ class Error(WeightingMixin, object):
             raise ConfidenceRankError
         if min(self.confidences) == -1:
             raise ConfidenceUnsetError
+        if sum(self.labels) == 0:
+            return Error.CORRECTION_NONEXIST
         conf = max([c.confidence if c.label else 0 for c in self.candidates])
         pos = sum([1 if c.confidence > conf else 0 for c in self.candidates])
+        #sort = sorted(self.candidates, key=lambda c: c.confidence, reverse=True)
+        #if len(sort) >=3:
+        #  print('{}({}): {}({}), {}({}), {}({})'
+        #      .format(self.name, pos+1
+        #          , sort[0].name, sort[0].confidence
+        #          , sort[1].name, sort[1].confidence
+        #          , sort[2].name, sort[2].confidence
+        #        ))
+        #elif len(sort) ==2:
+        #  print('{}({}): {}({}), {}({})'
+        #      .format(self.name, pos+1
+        #          , sort[0].name, sort[0].confidence
+        #          , sort[1].name, sort[1].confidence
+        #        ))
+        #elif len(sort) ==1:
+        #  print('{}({}): {}({})'
+        #      .format(self.name, pos+1
+        #          , sort[0].name, sort[0].confidence
+        #        ))
+        #else:
+        #  print('{}({})'
+        #      .format(self.name, pos+1))
         return pos + 1
 
     def add(self, candidate):
@@ -221,7 +259,6 @@ class Dataset(WeightingMixin, object):
         feature_registry: a feature registry.
         errors: a list of errors.
     """
-
     def __init__(self, errors, feature_registry):
         self.feature_registry = feature_registry
         self.errors = errors
@@ -234,8 +271,17 @@ class Dataset(WeightingMixin, object):
             A two dimensional list of floats. The feature value of each candidate
             stores in a nested list.
         """
-        return reduce(lambda x, y: x + y,
+        return functools.reduce(lambda x, y: x + y,
                 [e.feature_values for e in self.errors])
+
+
+    def feature_values_sub(self, features):
+        """ Get the feature values of all candidates of specific features.
+        """
+        def select(lst, features):
+            return [lst[self.feature_registry.get(f)] for f in features]
+        return [select(c.feature_values, features) for c in self.candidates]
+
 
     @property
     def labels(self):
@@ -244,7 +290,7 @@ class Dataset(WeightingMixin, object):
         Returns:
             A list of integers, which element is the feature value of a candidate.
         """
-        return reduce(lambda x, y: x + y, [e.labels for e in self.errors])
+        return functools.reduce(lambda x, y: x + y, [e.labels for e in self.errors])
 
     @property
     def confidences(self):
@@ -253,7 +299,7 @@ class Dataset(WeightingMixin, object):
         Returns:
             A list of floats, which element is the confidence of a candidate.
         """
-        return reduce(lambda x, y: x + y, [e.confidences for e in self.errors])
+        return functools.reduce(lambda x, y: x + y, [e.confidences for e in self.errors])
 
     @confidences.setter
     def confidences(self, values):
@@ -295,7 +341,7 @@ class Dataset(WeightingMixin, object):
             raise ValueError
 
         if filt is not None:
-            sub = Dataset(filter(filt, self.errors), self.feature_registry)
+            sub = Dataset(list(filter(filt, self.errors)), self.feature_registry)
         elif first is not None:
             size = int(first * len(self.errors)) if first < 1 else first
             sub = Dataset(self.errors[: size], self.feature_registry)
@@ -307,7 +353,7 @@ class Dataset(WeightingMixin, object):
 
         if return_complement:
             complement = Dataset(
-                    filter(lambda err: err not in sub.errors, self.errors),
+                    list(filter(lambda err: err not in sub.errors, self.errors)),
                     self.feature_registry)
             return sub, complement
         else:
@@ -315,6 +361,7 @@ class Dataset(WeightingMixin, object):
 
     def first(error_percentage):
         """ Generate a data subset. """
+        pass
 
     @staticmethod
     def read(pathname):
@@ -339,11 +386,13 @@ class Dataset(WeightingMixin, object):
         feature_registry = FeatureRegistry()
         errors = []
         
-        with open(pathname, 'r') as file:
+        with codecs.open(pathname, 'r', 'utf-8') as file:
             is_feature_line = True
             curr_error = None
          
-            for line in file:
+            for line in file.read().split('\n'):
+                # explictly split by '\n', in order to aviod to be accidentially
+                # break by some special characters.
                 line = line.strip()
                 
                 if is_feature_line:
@@ -357,11 +406,17 @@ class Dataset(WeightingMixin, object):
                 else:
                     # Read data lines.
                     if len(line) == 0:
-                        errors.append(curr_error)
+                        if curr_error != None:
+                            errors.append(curr_error)
+                            curr_error = None
                     else:
                         fields = line.split('\t')
-                        if len(fields) == 1:
-                            curr_error = Error(fields[0])
+                        if len(fields) == 2:
+                            curr_error = Error(fields[0], int(fields[1]))
+                        elif len(fields) == 40:
+                            # TODO: skip for now. Deal with special candidate
+                            # issue.
+                            pass
                         else:
                             curr_error.add(Candidate(
                                 fields[0],
@@ -373,6 +428,7 @@ class Dataset(WeightingMixin, object):
                 errors.append(curr_error)
         
         return Dataset(errors, feature_registry)
+
 
     def precision_at(self, n=float('inf')):
         """ The percentage of correction ranked in top 'n' among all errors in
@@ -400,7 +456,7 @@ class Dataset(WeightingMixin, object):
         if n <= 0:
             raise ValueError
         elif n == float('inf'):
-            def exists_true_label(error):
+            def exists_true_label(error): # check if a correct candidate exists 
                 for c in error.candidates:
                     if c.label == True:
                         return True
@@ -409,6 +465,7 @@ class Dataset(WeightingMixin, object):
         else:
             def get_rank_savely(err):
                 try:
+                    print(err.name, err.rank)
                     return err.rank
                 except ConfidenceRankError:
                     return float('inf')
