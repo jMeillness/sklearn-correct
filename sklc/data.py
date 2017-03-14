@@ -465,7 +465,6 @@ class Dataset(WeightingMixin, object):
         else:
             def get_rank_savely(err):
                 try:
-                    print(err.name, err.rank)
                     return err.rank
                 except ConfidenceRankError:
                     return float('inf')
