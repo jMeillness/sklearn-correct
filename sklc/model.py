@@ -25,9 +25,9 @@ class SKLModel(object):
     Attributes:
         _gs: an object that implements the 'sklearn.grid_search.GridSearchCV'
             interface.
+        features: a list of features used in training and testing.
         settings: the settings of the model.
     """
-
     def __init__(self, estimator, param_grid, train_data, **kwargs):
         """ Initialize a trained scikit-learn model.
             
@@ -45,6 +45,9 @@ class SKLModel(object):
                 pre-trained model file is provided. (default: False)
             weighted: a boolean flag indicates whether the training sample
                 should be weighted. (default: False)
+            features: a list of features names in dataset and are used in the
+                training and testing. All features will be used if this argument
+                is not given. (default: None)
             cv: the number of folds used in cross validataion. (default: 10)
             load: a boolean flag indicates whether initializing from data file.
                 (default: False)
@@ -58,7 +61,15 @@ class SKLModel(object):
         pkl_path = kwargs.get('pkl_path', None)
         load = kwargs.get('load', False)
 
-        print(estimator.get_params().keys())
+        this.features = kwargs.get('features', None)
+        if this.features is None:
+            this.features = train_data.features
+        else:
+            for feat in this.features:
+                if feat not in this.features:
+                    raise ValueError('Invalid feature type: {}'.format(feat))
+
+        #print(estimator.get_params().keys())
         
         if load:
             return
@@ -82,13 +93,16 @@ class SKLModel(object):
                     n_jobs=-1,
                     cv=cv,
                     )
-            self._gs.fit(np.array(train_data.feature_values), np.array(train_data.labels))
+            self._gs.fit(np.array(train_data.feature_values_sub(self.features)),
+                    np.array(train_data.labels))
             if pkl_path != None:
                 self.write(pkl_path)
+
 
     @property
     def settings(self):
         return self._gs.best_params_
+
 
     def predict(self, test_data):
         """ Make predition to the test data.
@@ -98,10 +112,11 @@ class SKLModel(object):
                 file.
         """
         confidences = self._gs.best_estimator_ \
-                .predict(np.array(test_data.feature_values)) \
+                .predict(np.array(test_data.feature_values_sub(self.features))) \
                 .reshape(-1,).tolist()
         test_data.confidences = confidences
         return confidences
+
 
     @staticmethod
     def load(pathname):
@@ -122,6 +137,7 @@ class SKLModel(object):
         model = SKLModel(base.BaseEstimator(), None, None, load=True)
         model._gs = joblib.load(pathname) 
         return model
+
 
     def write(self, pathname):
         """ Write this model to file. This model can be reconstruct using 

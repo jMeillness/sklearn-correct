@@ -191,6 +191,36 @@ class DatasetTest(unittest.TestCase):
             ], self.dataset.feature_values)
 
 
+    def test_feature_values_sub(self):
+        self.assertEqual([
+            [0.1, 0.2],
+            [0.2, 0.0],
+            [0.3, 0.4],
+            [0.1, 0.2],
+            [0.5, 0.4],
+            [0.1, 0.2],
+            [0.5, 0.4],
+            ], self.dataset.feature_values_sub(['Feature1', 'Feature2']))
+        self.assertEqual([
+            [0.2],
+            [0.0],
+            [0.4],
+            [0.2],
+            [0.4],
+            [0.2],
+            [0.4],
+            ], self.dataset.feature_values_sub(['Feature2']))
+        self.assertEqual([
+            [0.3, 0.1],
+            [0.8, 0.2],
+            [0.1, 0.3],
+            [0.3, 0.1],
+            [0.1, 0.5],
+            [0.3, 0.1],
+            [0.1, 0.5],
+            ], self.dataset.feature_values_sub(['Feature3', 'Feature1']))
+
+
     def test_labels(self):
         self.assertEqual([1, 0, 1, 0, 1, 0, 0], self.dataset.labels)
 

@@ -21,9 +21,9 @@ class Feature(object):
         name: the string representation of the feature. It is identical to the
             return value of 'self.__str__()'.
     """
-
     def __init__(self, name):
         self.name = name
+
 
     def __str__(self):
         return self.name
@@ -40,10 +40,15 @@ class FeatureRegistry(object):
         __dict: a dictionary stores the mappings from feature to the according
             ID.
     """
-
     def __init__(self):
         self.__list = []
         self.__dict = {}
+
+
+    @property
+    def feature_names():
+        return [f.name for f in self.__list]
+
 
     def register(self, feature):
         """ Add feature into this registry.
@@ -60,6 +65,7 @@ class FeatureRegistry(object):
                     (feature.name, [str(f) for f in self.__list]))
         self.__list.append(feature)
         self.__dict[feature.name] = len(self.__list) - 1
+
 
     def get(self, key):
         """ Get the according feature information.
@@ -91,6 +97,7 @@ class FeatureRegistry(object):
                 raise KeyError(e)
         else:
             raise TypeError
+
 
     def size(self):
         return len(self.__list)
@@ -263,6 +270,14 @@ class Dataset(WeightingMixin, object):
         self.feature_registry = feature_registry
         self.errors = errors
 
+
+    @property
+    def features():
+        """ A list of feature names for each candidate in this dataset.
+        """
+        return self.feature_registry.feature_names
+
+
     @property
     def feature_values(self):
         """ Get the feature values of all candidates from all errors.
@@ -280,7 +295,7 @@ class Dataset(WeightingMixin, object):
         """
         def select(lst, features):
             return [lst[self.feature_registry.get(f)] for f in features]
-        return [select(c.feature_values, features) for c in self.candidates]
+        return [select(c, features) for c in self.feature_values]
 
 
     @property
@@ -291,6 +306,7 @@ class Dataset(WeightingMixin, object):
             A list of integers, which element is the feature value of a candidate.
         """
         return functools.reduce(lambda x, y: x + y, [e.labels for e in self.errors])
+
 
     @property
     def confidences(self):
@@ -313,6 +329,7 @@ class Dataset(WeightingMixin, object):
             num_candidates = len(e.candidates)
             e.confidences = values[used: used + num_candidates]
             used += num_candidates
+
 
     def subset(self, **kwargs):
         """ Generate a data subset.
@@ -359,9 +376,11 @@ class Dataset(WeightingMixin, object):
         else:
             return sub
 
+
     def first(error_percentage):
         """ Generate a data subset. """
         pass
+
 
     @staticmethod
     def read(pathname):
