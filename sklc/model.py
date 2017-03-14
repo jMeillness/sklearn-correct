@@ -61,7 +61,7 @@ class SKLModel(object):
         pkl_path = kwargs.get('pkl_path', None)
         load = kwargs.get('load', False)
 
-        this.features = kwargs.get('features', None)
+        self.features = kwargs.get('features', None)
         if this.features is None:
             this.features = train_data.features
         else:
@@ -275,7 +275,7 @@ class SupportVectorModel(SKLModel):
     DEFAULT_PARAM_GRID = dict(
             kernel = ['rbf'],
             C = [1e0],
-            gamma = np.logspace(-2, 2, 5),
+            #gamma = np.logspace(-2, 2, 5),
             )
     ESTIMATOR = svm.SVR()
 
