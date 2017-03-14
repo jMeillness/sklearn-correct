@@ -62,11 +62,11 @@ class SKLModel(object):
         load = kwargs.get('load', False)
 
         self.features = kwargs.get('features', None)
-        if this.features is None:
-            this.features = train_data.features
+        if self.features is None:
+            self.features = train_data.features
         else:
-            for feat in this.features:
-                if feat not in this.features:
+            for feat in self.features:
+                if feat not in self.features:
                     raise ValueError('Invalid feature type: {}'.format(feat))
 
         #print(estimator.get_params().keys())
