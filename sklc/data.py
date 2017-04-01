@@ -46,7 +46,7 @@ class FeatureRegistry(object):
 
 
     @property
-    def feature_names():
+    def feature_names(self):
         return [f.name for f in self.__list]
 
 
@@ -272,7 +272,7 @@ class Dataset(WeightingMixin, object):
 
 
     @property
-    def features():
+    def features(self):
         """ A list of feature names for each candidate in this dataset.
         """
         return self.feature_registry.feature_names
