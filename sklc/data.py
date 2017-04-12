@@ -489,4 +489,3 @@ class Dataset(WeightingMixin, object):
                     return float('inf')
             count = sum([1 if get_rank_savely(e) <= n else 0 for e in self.errors])
         return count / float(len(self.errors))
-        

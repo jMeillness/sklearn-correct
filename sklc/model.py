@@ -297,8 +297,7 @@ class SupportVectorModel(SKLModel):
 class MLPModel(SKLModel):
 
     DEFAULT_PARAM_GRID = dict(
-            activation = ['logistic', 'tanh', 'relu'],
-            algorithm = ['sgd'],
+            activation = ['relu'],
             )
     ESTIMATOR = neural_network.MLPRegressor()
 
